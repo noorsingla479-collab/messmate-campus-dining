@@ -24,8 +24,8 @@ export function StarRating({ value, onChange, size = 20, className = '' }: StarR
             size={size}
             className={
               star <= value
-                ? 'fill-orange-400 text-orange-400'
-                : 'fill-cream-200 text-cream-300'
+                ? 'fill-amber-400 text-amber-400'
+                : 'fill-ink-100 text-ink-200'
             }
           />
         </button>

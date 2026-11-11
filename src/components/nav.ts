@@ -1,29 +1,29 @@
 import {
   LayoutDashboard,
-  CalendarDays,
-  Star,
-  MessageSquareHeart,
-  Trash2,
-  CircleDot,
+  FilePlus2,
+  ListChecks,
+  ClipboardList,
+  Map,
+  BarChart3,
   User,
-  ChefHat,
+  type LucideIcon,
 } from 'lucide-react';
 
 export type PageId =
   | 'dashboard'
-  | 'menu'
-  | 'ratings'
-  | 'feedback'
-  | 'waste'
-  | 'availability'
+  | 'report'
+  | 'track'
+  | 'myreports'
+  | 'map'
+  | 'analytics'
   | 'profile';
 
-export const navItems: { id: PageId; label: string; icon: typeof LayoutDashboard }[] = [
+export const navItems: { id: PageId; label: string; icon: LucideIcon }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'menu', label: 'Weekly Menu', icon: CalendarDays },
-  { id: 'ratings', label: 'Ratings & Reviews', icon: Star },
-  { id: 'feedback', label: 'Feedback', icon: MessageSquareHeart },
-  { id: 'waste', label: 'Food Waste', icon: Trash2 },
-  { id: 'availability', label: 'Availability', icon: CircleDot },
+  { id: 'report', label: 'Report an Issue', icon: FilePlus2 },
+  { id: 'track', label: 'Track Issues', icon: ListChecks },
+  { id: 'myreports', label: 'My Reports', icon: ClipboardList },
+  { id: 'map', label: 'Campus Map', icon: Map },
+  { id: 'analytics', label: 'Analytics', icon: BarChart3 },
   { id: 'profile', label: 'Profile', icon: User },
 ];

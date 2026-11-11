@@ -14,7 +14,7 @@ export function useLocalStorage<T>(key: string, initial: T): [T, (value: T | ((p
     try {
       localStorage.setItem(key, JSON.stringify(state));
     } catch {
-      // ignore write errors
+      // ignore
     }
   }, [key, state]);
 

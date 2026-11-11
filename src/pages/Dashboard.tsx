@@ -1,247 +1,181 @@
-import { Sunrise, Sun, Cookie, Moon, Star, ArrowRight, TrendingUp, Clock, Utensils } from 'lucide-react';
+import { useMemo } from 'react';
+import {
+  FileText,
+  Clock,
+  Loader2,
+  CheckCircle2,
+  ArrowRight,
+  FilePlus2,
+  TrendingUp,
+  Activity,
+} from 'lucide-react';
+import type { Issue } from '../types';
 import type { PageId } from '../components/nav';
-import type { Review } from '../types';
-import { featuredMeal, weeklyMenu, getTodayName, mealTimings } from '../data';
-import { FoodCard } from '../components/FoodCard';
-import { StarRating } from '../components/StarRating';
-import { VegBadge } from '../components/VegBadge';
+import { IssueCard } from '../components/IssueCard';
+import { BarChart, DonutChart } from '../components/Charts';
+import { weeklyReportData } from '../seedData';
 
 interface DashboardProps {
-  reviews: Review[];
+  issues: Issue[];
   profileName: string;
   onNavigate: (page: PageId) => void;
+  onSelectIssue: (issue: Issue) => void;
 }
 
-const mealIcons: Record<string, typeof Sunrise> = {
-  sunrise: Sunrise,
-  sun: Sun,
-  cookie: Cookie,
-  moon: Moon,
-};
+export function Dashboard({ issues, profileName, onNavigate, onSelectIssue }: DashboardProps) {
+  const stats = useMemo(() => {
+    const total = issues.length;
+    const pending = issues.filter((i) => i.status === 'Submitted').length;
+    const inProgress = issues.filter((i) => i.status === 'In Progress').length;
+    const resolved = issues.filter((i) => i.status === 'Resolved').length;
+    return { total, pending, inProgress, resolved };
+  }, [issues]);
 
-export function Dashboard({ reviews, profileName, onNavigate }: DashboardProps) {
-  const todayName = getTodayName();
-  const todayMenu = weeklyMenu.find((d) => d.day === todayName) ?? weeklyMenu[0];
-  const avgRating =
-    reviews.length > 0
-      ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)
-      : '4.2';
+  const recentIssues = useMemo(
+    () => [...issues].sort((a, b) => b.submittedAt - a.submittedAt).slice(0, 4),
+    [issues]
+  );
 
-  const mealSections = [
-    { key: 'breakfast', label: 'Breakfast', items: todayMenu.breakfast },
-    { key: 'lunch', label: 'Lunch', items: todayMenu.lunch },
-    { key: 'snacks', label: 'Snacks', items: todayMenu.snacks },
-    { key: 'dinner', label: 'Dinner', items: todayMenu.dinner },
-  ] as const;
+  const statusSegments = [
+    { label: 'Submitted', value: stats.pending, color: '#0C8CE7' },
+    { label: 'In Progress', value: stats.inProgress, color: '#F59E0B' },
+    { label: 'Resolved', value: stats.resolved, color: '#14B8A6' },
+  ];
 
-  const quickLinks: { page: PageId; label: string; icon: typeof Utensils; color: string }[] = [
-    { page: 'menu', label: 'Weekly Menu', icon: Utensils, color: 'bg-orange-100 text-orange-600' },
-    { page: 'feedback', label: 'Give Feedback', icon: Star, color: 'bg-green-100 text-green-600' },
-    { page: 'waste', label: 'Food Waste', icon: TrendingUp, color: 'bg-blue-100 text-blue-600' },
-    { page: 'ratings', label: 'Reviews', icon: Star, color: 'bg-purple-100 text-purple-600' },
+  const statCards = [
+    { label: 'Total Reported', value: stats.total, icon: FileText, color: 'bg-sky-50 text-sky-600', ring: 'ring-sky-100' },
+    { label: 'Pending', value: stats.pending, icon: Clock, color: 'bg-amber-50 text-amber-600', ring: 'ring-amber-100' },
+    { label: 'In Progress', value: stats.inProgress, icon: Loader2, color: 'bg-violet-50 text-violet-600', ring: 'ring-violet-100' },
+    { label: 'Resolved', value: stats.resolved, icon: CheckCircle2, color: 'bg-teal-50 text-teal-600', ring: 'ring-teal-100' },
   ];
 
   return (
-    <div className="space-y-8 animate-fadeIn">
+    <div className="space-y-6 animate-fadeIn">
       {/* Welcome hero */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-orange-500 via-orange-500 to-orange-600 p-8 md:p-10 text-white shadow-card">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-20 translate-x-20" />
-        <div className="absolute bottom-0 left-1/2 w-48 h-48 bg-white/5 rounded-full translate-y-16" />
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-sky-600 to-sky-800 p-8 md:p-10 text-white shadow-card">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-24 translate-x-24" />
+        <div className="absolute bottom-0 left-1/3 w-40 h-40 bg-teal-400/10 rounded-full translate-y-12" />
         <div className="relative z-10">
-          <p className="text-orange-100 font-medium mb-1">{todayName}, {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}</p>
+          <p className="text-sky-200 font-medium mb-1">
+            {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+          </p>
           <h1 className="text-3xl md:text-4xl font-display font-extrabold mb-2">
-            Hello, {profileName.split(' ')[0]}!
+            Welcome back, {profileName.split(' ')[0]}!
           </h1>
-          <p className="text-orange-50 max-w-md text-lg leading-relaxed">
-            What's cooking at the mess today? Let's explore today's meals and make good food choices together.
+          <p className="text-sky-100 max-w-lg text-lg leading-relaxed">
+            Report campus issues, track their progress, and help build a better campus for everyone.
           </p>
           <div className="flex flex-wrap gap-3 mt-5">
-            <button onClick={() => onNavigate('menu')} className="btn bg-white text-orange-600 px-5 py-2.5 hover:bg-cream-100">
-              View Today's Menu <ArrowRight size={18} />
+            <button onClick={() => onNavigate('report')} className="btn bg-white text-sky-700 px-5 py-2.5 hover:bg-sky-50">
+              <FilePlus2 size={18} /> Report an Issue
             </button>
-            <button onClick={() => onNavigate('feedback')} className="btn bg-orange-700/40 backdrop-blur text-white px-5 py-2.5 hover:bg-orange-700/60 border border-white/20">
-              Share Feedback
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Stats row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 stagger">
-        <div className="card p-5">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center">
-              <Star className="text-orange-500" size={20} />
-            </div>
-            <div>
-              <p className="text-2xl font-display font-bold text-ink-900">{avgRating}</p>
-              <p className="text-xs text-ink-500 font-medium">Avg. Food Rating</p>
-            </div>
-          </div>
-        </div>
-        <div className="card p-5">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
-              <Utensils className="text-green-600" size={20} />
-            </div>
-            <div>
-              <p className="text-2xl font-display font-bold text-ink-900">{reviews.length}</p>
-              <p className="text-xs text-ink-500 font-medium">Student Reviews</p>
-            </div>
-          </div>
-        </div>
-        <div className="card p-5">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
-              <Clock className="text-blue-600" size={20} />
-            </div>
-            <div>
-              <p className="text-2xl font-display font-bold text-ink-900">4</p>
-              <p className="text-xs text-ink-500 font-medium">Meals Daily</p>
-            </div>
-          </div>
-        </div>
-        <div className="card p-5">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
-              <TrendingUp className="text-purple-600" size={20} />
-            </div>
-            <div>
-              <p className="text-2xl font-display font-bold text-ink-900">7</p>
-              <p className="text-xs text-ink-500 font-medium">Day Menu</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Featured meal */}
-      <div className="card overflow-hidden animate-fadeIn">
-        <div className="flex flex-col md:flex-row">
-          <div className="md:w-2/5 relative h-56 md:h-auto min-h-[240px]">
-            <img src={featuredMeal.image} alt={featuredMeal.name} className="absolute inset-0 w-full h-full object-cover" />
-            <div className="absolute top-4 left-4 badge bg-orange-500 text-white shadow-lg px-3 py-1">
-              <Star size={14} className="fill-white" /> Featured Today
-            </div>
-          </div>
-          <div className="md:w-3/5 p-6 md:p-8 flex flex-col justify-center">
-            <div className="flex items-center gap-2 mb-2">
-              <VegBadge category={featuredMeal.category} />
-              <span className="badge bg-cream-200 text-ink-600">{featuredMeal.calories} cal</span>
-            </div>
-            <h2 className="text-2xl md:text-3xl font-display font-bold text-ink-900 mb-2">{featuredMeal.name}</h2>
-            <p className="text-ink-600 leading-relaxed mb-4">{featuredMeal.description}</p>
-            <div className="flex flex-wrap gap-2 mb-4">
-              {featuredMeal.tags.map((tag) => (
-                <span key={tag} className="badge bg-orange-50 text-orange-600">{tag}</span>
-              ))}
-            </div>
-            <div className="flex items-center gap-3">
-              <StarRating value={5} size={18} />
-              <span className="text-sm text-ink-500 font-medium">Chef's Special — top rated by students</span>
-            </div>
-            <button onClick={() => onNavigate('ratings')} className="btn-primary self-start mt-5">
-              Rate This Meal <ArrowRight size={16} />
+            <button onClick={() => onNavigate('track')} className="btn bg-sky-700/40 backdrop-blur text-white px-5 py-2.5 hover:bg-sky-700/60 border border-white/20">
+              Track Issues <ArrowRight size={18} />
             </button>
           </div>
         </div>
       </div>
 
-      {/* Today's meals */}
-      <div>
-        <div className="flex items-center justify-between mb-5">
-          <div>
-            <h2 className="text-xl md:text-2xl font-display font-bold text-ink-900">Today's Meals</h2>
-            <p className="text-sm text-ink-500">{todayName} • Four meals served throughout the day</p>
-          </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {mealSections.map((section) => {
-            const Icon = mealIcons[
-              section.key === 'breakfast' ? 'sunrise' :
-              section.key === 'lunch' ? 'sun' :
-              section.key === 'snacks' ? 'cookie' : 'moon'
-            ];
-            const timing = mealTimings.find((t) => t.type.toLowerCase() === section.key);
-            return (
-              <div key={section.key} className="card p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center">
-                      <Icon className="text-orange-500" size={20} />
-                    </div>
-                    <div>
-                      <h3 className="font-display font-bold text-ink-900">{section.label}</h3>
-                      {timing && <p className="text-xs text-ink-500">{timing.start} – {timing.end}</p>}
-                    </div>
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  {section.items.map((meal) => (
-                    <div key={meal.id} className="flex items-center gap-3 p-2 rounded-xl hover:bg-cream-100 transition-colors">
-                      <img src={meal.image} alt={meal.name} className="w-14 h-14 rounded-lg object-cover flex-shrink-0" loading="lazy" />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-semibold text-ink-800 text-sm truncate">{meal.name}</h4>
-                          <VegBadge category={meal.category} />
-                        </div>
-                        <p className="text-xs text-ink-500 truncate">{meal.description}</p>
-                      </div>
-                    </div>
-                  ))}
+      {/* Stat cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 stagger">
+        {statCards.map((stat) => {
+          const Icon = stat.icon;
+          return (
+            <div key={stat.label} className={`card p-5 ring-2 ${stat.ring}`}>
+              <div className="flex items-center justify-between mb-3">
+                <div className={`w-11 h-11 rounded-xl ${stat.color} flex items-center justify-center`}>
+                  <Icon size={22} className={stat.label === 'In Progress' ? 'animate-spin' : ''} />
                 </div>
               </div>
-            );
-          })}
+              <p className="text-3xl font-display font-extrabold text-ink-900">{stat.value}</p>
+              <p className="text-sm text-ink-500 font-medium mt-0.5">{stat.label}</p>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Charts row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="card p-6 lg:col-span-2">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="font-display font-bold text-ink-900">Weekly Issue Reports</h2>
+              <p className="text-sm text-ink-500">Issues reported over the past week</p>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-sky-50 flex items-center justify-center">
+              <TrendingUp size={20} className="text-sky-600" />
+            </div>
+          </div>
+          <BarChart data={weeklyReportData} />
+        </div>
+
+        <div className="card p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="font-display font-bold text-ink-900">Status Distribution</h2>
+              <p className="text-sm text-ink-500">Current issue statuses</p>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-teal-50 flex items-center justify-center">
+              <Activity size={20} className="text-teal-600" />
+            </div>
+          </div>
+          <div className="flex flex-col items-center">
+            <DonutChart
+              segments={statusSegments}
+              centerValue={String(stats.total)}
+              centerLabel="Issues"
+            />
+            <div className="grid grid-cols-1 gap-2 mt-4 w-full">
+              {statusSegments.map((seg) => (
+                <div key={seg.label} className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full" style={{ background: seg.color }} />
+                    <span className="text-ink-600 font-medium">{seg.label}</span>
+                  </div>
+                  <span className="font-bold text-ink-800">{seg.value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Upcoming timings + quick links */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="card p-6">
-          <h2 className="text-lg font-display font-bold text-ink-900 mb-4 flex items-center gap-2">
-            <Clock size={20} className="text-orange-500" /> Upcoming Meal Timings
-          </h2>
-          <div className="space-y-3">
-            {mealTimings.map((t) => {
-              const Icon = mealIcons[t.icon];
-              return (
-                <div key={t.type} className="flex items-center gap-4 p-3 rounded-xl bg-cream-50 border border-cream-200">
-                  <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm">
-                    <Icon className="text-orange-500" size={18} />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-semibold text-ink-800">{t.type}</p>
-                    <p className="text-sm text-ink-500">{t.start} – {t.end}</p>
-                  </div>
-                </div>
-              );
-            })}
+      {/* Recent issues + quick report */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-display font-bold text-ink-900">Recent Issue Reports</h2>
+            <button onClick={() => onNavigate('track')} className="text-sm font-semibold text-sky-600 hover:text-sky-700 flex items-center gap-1">
+              View All <ArrowRight size={16} />
+            </button>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {recentIssues.map((issue) => (
+              <IssueCard key={issue.id} issue={issue} onClick={() => onSelectIssue(issue)} />
+            ))}
           </div>
         </div>
 
-        <div className="card p-6">
-          <h2 className="text-lg font-display font-bold text-ink-900 mb-4 flex items-center gap-2">
-            <ArrowRight size={20} className="text-orange-500" /> Quick Links
-          </h2>
-          <div className="grid grid-cols-2 gap-3">
-            {quickLinks.map((link) => {
-              const Icon = link.icon;
-              return (
-                <button
-                  key={link.page}
-                  onClick={() => onNavigate(link.page)}
-                  className="group p-4 rounded-xl border border-cream-200 hover:border-orange-300 hover:shadow-soft transition-all text-left"
-                >
-                  <div className={`w-10 h-10 rounded-xl ${link.color} flex items-center justify-center mb-2 group-hover:scale-110 transition-transform`}>
-                    <Icon size={20} />
-                  </div>
-                  <p className="font-semibold text-ink-800 text-sm">{link.label}</p>
-                </button>
-              );
-            })}
+        <div className="card p-6 bg-gradient-to-br from-sky-50 to-teal-50 border-sky-100">
+          <h2 className="font-display font-bold text-ink-900 mb-2">Quick Report</h2>
+          <p className="text-sm text-ink-600 mb-5">
+            Spotted a problem on campus? Report it in under a minute and track it to resolution.
+          </p>
+          <div className="space-y-2 mb-5">
+            {[
+              'Electricity issues',
+              'Wi-Fi connectivity',
+              'Water supply problems',
+              'Cleanliness concerns',
+            ].map((item) => (
+              <div key={item} className="flex items-center gap-2 text-sm text-ink-600">
+                <CheckCircle2 size={16} className="text-teal-500 flex-shrink-0" />
+                {item}
+              </div>
+            ))}
           </div>
-          <button onClick={() => onNavigate('availability')} className="btn-secondary w-full mt-4">
-            Check Food Availability <ArrowRight size={16} />
+          <button onClick={() => onNavigate('report')} className="btn-primary w-full">
+            <FilePlus2 size={18} /> Report Now
           </button>
         </div>
       </div>
